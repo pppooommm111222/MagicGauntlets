@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.magicgauntlets.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "PlayerEntityRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
