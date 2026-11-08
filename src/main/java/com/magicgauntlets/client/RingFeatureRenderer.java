@@ -10,8 +10,10 @@ import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.render.model.BakedModel;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
+import net.minecraft.client.util.ModelIdentifier;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 
@@ -25,14 +27,17 @@ public class RingFeatureRenderer extends FeatureRenderer<AbstractClientPlayerEnt
 
     @Override
     public void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, AbstractClientPlayerEntity entity, float limbAngle, float limbDistance, float tickDelta, float animationProgress, float headYaw, float headPitch) {
-        ItemStack ringStack = new ItemStack(MagicGauntlets.GRAVITY_GAUNTLET);
         
-        boolean hasRing = entity.getInventory().main.stream().anyMatch(s -> 
-            s.isOf(MagicGauntlets.GRAVITY_GAUNTLET) || 
-            s.isOf(MagicGauntlets.CRYO_GAUNTLET) || 
-            s.isOf(MagicGauntlets.STARBURST_GAUNTLET) || 
-            s.isOf(MagicGauntlets.THUNDER_GAUNTLET)
-        );
+        boolean hasRing = false;
+        // 修复 private 报错：遍历玩家整个背包格子
+        for (int i = 0; i < entity.getInventory().size(); i++) {
+            ItemStack stack = entity.getInventory().getStack(i);
+            if (stack.isOf(MagicGauntlets.GRAVITY_GAUNTLET) || stack.isOf(MagicGauntlets.CRYO_GAUNTLET) || 
+                stack.isOf(MagicGauntlets.STARBURST_GAUNTLET) || stack.isOf(MagicGauntlets.THUNDER_GAUNTLET)) {
+                hasRing = true;
+                break;
+            }
+        }
         
         if (!hasRing) return;
 
@@ -42,12 +47,13 @@ public class RingFeatureRenderer extends FeatureRenderer<AbstractClientPlayerEnt
         matrices.scale(0.4f, 0.4f, 0.4f); 
         matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90));
 
-        // 1.21.5 正确的获取 BakedModel 方法
-        BakedModel model = MinecraftClient.getInstance().getItemRenderer().getModel(ringStack, entity.getWorld(), entity, 0);
+        // 修复 API 报错：使用 ModelIdentifier 获取 1.21.5 的模型
+        ModelIdentifier modelId = new ModelIdentifier(Identifier.of("magicgauntlets", "gravity_gauntlet"), "inventory");
+        BakedModel model = MinecraftClient.getInstance().getBakedModelManager().getModel(modelId);
         
-        // 1.21.5 正确的渲染方法
+        // 渲染
         this.itemRenderer.renderItem(
-            ringStack, 
+            new ItemStack(MagicGauntlets.GRAVITY_GAUNTLET), 
             ModelTransformationMode.FIXED, 
             false, 
             matrices, 
