@@ -1,5 +1,6 @@
 package com.magicgauntlets;
 
+import com.magicgauntlets.client.RingFeatureRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
