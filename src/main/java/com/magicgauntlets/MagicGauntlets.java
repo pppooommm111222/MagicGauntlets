@@ -25,7 +25,6 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
 import java.util.HashMap;
@@ -53,7 +52,7 @@ public class MagicGauntlets implements ModInitializer {
                 }
                 COMBO_TIMER.put(user.getUuid(), System.currentTimeMillis());
                 user.sendMessage(Text.literal("🌌 引力场展开！3秒内释放攻击魔法触发连招！").formatted(Formatting.LIGHT_PURPLE), true);
-                user.getItemCooldownManager().set(this, 100);
+                user.getItemCooldownManager().set(user.getStackInHand(hand), 100);
             }
             return TypedActionResult.success(user.getStackInHand(hand));
         }
@@ -78,7 +77,7 @@ public class MagicGauntlets implements ModInitializer {
                     sw.createExplosion(user, user.getX(), user.getY(), user.getZ(), 2.0f, false, World.ExplosionSourceType.MOB);
                     user.sendMessage(Text.literal("💥 星爆！").formatted(Formatting.RED), true);
                 }
-                user.getItemCooldownManager().set(this, 60);
+                user.getItemCooldownManager().set(user.getStackInHand(hand), 60);
             }
             return TypedActionResult.success(user.getStackInHand(hand));
         }
@@ -105,13 +104,13 @@ public class MagicGauntlets implements ModInitializer {
                 }
                 user.sendMessage(Text.literal(isCombo ? "🧊 COMBO: 绝对零度！" : "❄️ 寒冰领域！").formatted(Formatting.AQUA, isCombo ? Formatting.BOLD : Formatting.RESET), true);
                 if (isCombo) COMBO_TIMER.remove(user.getUuid());
-                user.getItemCooldownManager().set(this, 100);
+                user.getItemCooldownManager().set(user.getStackInHand(hand), 100);
             }
             return TypedActionResult.success(user.getStackInHand(hand));
         }
     };
 
-    // 4. 狂雷手环（彻底重写，不用复杂的枚举）
+    // 4. 狂雷手环 (已修复：使用 create 方法生成闪电)
     public static final Item THUNDER_GAUNTLET = new Item(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(MOD_ID, "thunder_gauntlet"))).maxCount(1)) {
         @Override
         public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
@@ -122,10 +121,12 @@ public class MagicGauntlets implements ModInitializer {
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(range));
                 for (Entity entity : entities) {
                     if (entity instanceof LivingEntity) {
-                        // 最原始、最安全的闪电生成方法
-                        LightningEntity lightning = new LightningEntity(EntityType.LIGHTNING_BOLT, sw);
-                        lightning.setPosition(entity.getX(), entity.getY(), entity.getZ());
-                        sw.spawnEntity(lightning);
+                        // 1.21.5 正确生成实体的方式
+                        LightningEntity lightning = EntityType.LIGHTNING_BOLT.create(sw);
+                        if (lightning != null) {
+                            lightning.refreshPositionAfterTeleport(entity.getPos());
+                            sw.spawnEntity(lightning);
+                        }
                         if (isCombo) {
                             entity.damage(sw, sw.getDamageSources().magic(), 20.0f);
                         }
@@ -134,7 +135,7 @@ public class MagicGauntlets implements ModInitializer {
                 sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.PLAYERS, 5.0f, 1.0f);
                 user.sendMessage(Text.literal(isCombo ? "⚡ COMBO: 天罚雷狱！" : "🌩️ 雷霆万钧！").formatted(Formatting.YELLOW, isCombo ? Formatting.BOLD : Formatting.RESET), true);
                 if (isCombo) COMBO_TIMER.remove(user.getUuid());
-                user.getItemCooldownManager().set(this, 120);
+                user.getItemCooldownManager().set(user.getStackInHand(hand), 120);
             }
             return TypedActionResult.success(user.getStackInHand(hand));
         }
