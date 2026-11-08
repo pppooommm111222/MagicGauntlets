@@ -6,7 +6,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LightningEntity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
@@ -26,6 +25,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
 import java.util.HashMap;
@@ -43,7 +43,7 @@ public class MagicGauntlets implements ModInitializer {
         public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
             if (!world.isClient) {
                 ServerWorld sw = (ServerWorld) world;
-                sw.spawnParticles(ParticleTypes.REVERSE_PORTAL, user.getX(), user.getY() + 1, user.getZ(), 100, 3, 3, 3, 0.1);
+                sw.spawnParticles(ParticleTypes.PORTAL, user.getX(), user.getY() + 1, user.getZ(), 100, 3, 3, 3, 0.1);
                 sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 2.0f, 0.5f);
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(15.0));
                 for (Entity entity : entities) {
@@ -67,15 +67,15 @@ public class MagicGauntlets implements ModInitializer {
                 ServerWorld sw = (ServerWorld) world;
                 boolean isCombo = (System.currentTimeMillis() - COMBO_TIMER.getOrDefault(user.getUuid(), 0L)) < 3000;
                 if (isCombo) {
-                    sw.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, user.getX(), user.getY(), user.getZ(), 20, 2, 2, 2, 0);
-                    sw.spawnParticles(ParticleTypes.FLAME, user.getX(), user.getY(), user.getZ(), 500, 3, 3, 3, 1.0);
-                    sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_ENDER_DRAGON_GROWL, SoundCategory.PLAYERS, 5.0f, 1.0f);
-                    sw.createExplosion(user, user.getX(), user.getY(), user.getZ(), 6.0f, false, World.ExplosionSourceType.MOB);
+                    sw.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, user.getX(), user.getY(), user.getZ(), 5, 0, 0, 0, 0);
+                    sw.spawnParticles(ParticleTypes.FLAME, user.getX(), user.getY(), user.getZ(), 300, 2, 2, 2, 0.5);
+                    sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 3.0f, 0.5f);
+                    sw.createExplosion(user, user.getX(), user.getY(), user.getZ(), 5.0f, false, World.ExplosionSourceType.MOB);
                     user.sendMessage(Text.literal("🔥 COMBO: 超新星爆发！").formatted(Formatting.GOLD, Formatting.BOLD), true);
                     COMBO_TIMER.remove(user.getUuid());
                 } else {
-                    sw.spawnParticles(ParticleTypes.EXPLOSION, user.getX(), user.getY(), user.getZ(), 5, 1, 1, 1, 0);
-                    sw.createExplosion(user, user.getX(), user.getY(), user.getZ(), 3.0f, false, World.ExplosionSourceType.MOB);
+                    sw.spawnParticles(ParticleTypes.EXPLOSION, user.getX(), user.getY(), user.getZ(), 5, 0, 0, 0, 0);
+                    sw.createExplosion(user, user.getX(), user.getY(), user.getZ(), 2.0f, false, World.ExplosionSourceType.MOB);
                     user.sendMessage(Text.literal("💥 星爆！").formatted(Formatting.RED), true);
                 }
                 user.getItemCooldownManager().set(this, 60);
@@ -93,7 +93,7 @@ public class MagicGauntlets implements ModInitializer {
                 boolean isCombo = (System.currentTimeMillis() - COMBO_TIMER.getOrDefault(user.getUuid(), 0L)) < 3000;
                 int duration = isCombo ? 400 : 200;
                 int amp = isCombo ? 4 : 2;
-                sw.spawnParticles(ParticleTypes.SNOWFLAKE, user.getX(), user.getY() + 1, user.getZ(), isCombo ? 1000 : 200, 10, 5, 10, 0.1);
+                sw.spawnParticles(ParticleTypes.SNOWFLAKE, user.getX(), user.getY() + 1, user.getZ(), isCombo ? 500 : 100, 5, 5, 5, 0.1);
                 sw.playSound(null, user.getBlockPos(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 3.0f, 0.5f);
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(isCombo ? 20.0 : 10.0));
                 for (Entity entity : entities) {
@@ -111,7 +111,7 @@ public class MagicGauntlets implements ModInitializer {
         }
     };
 
-    // 4. 狂雷手环
+    // 4. 狂雷手环（彻底重写，不用复杂的枚举）
     public static final Item THUNDER_GAUNTLET = new Item(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(MOD_ID, "thunder_gauntlet"))).maxCount(1)) {
         @Override
         public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
@@ -122,11 +122,12 @@ public class MagicGauntlets implements ModInitializer {
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(range));
                 for (Entity entity : entities) {
                     if (entity instanceof LivingEntity) {
-                        LightningEntity lightning = EntityType.LIGHTNING_BOLT.create(sw, SpawnReason.TRIGGERED);
-                        if (lightning != null) {
-                            lightning.refreshPositionAfterTeleport(entity.getPos());
-                            sw.spawnEntity(lightning);
-                            if (isCombo) entity.damage(sw, sw.getDamageSources().lightningBolt(), 20.0f);
+                        // 最原始、最安全的闪电生成方法
+                        LightningEntity lightning = new LightningEntity(EntityType.LIGHTNING_BOLT, sw);
+                        lightning.setPosition(entity.getX(), entity.getY(), entity.getZ());
+                        sw.spawnEntity(lightning);
+                        if (isCombo) {
+                            entity.damage(sw, sw.getDamageSources().magic(), 20.0f);
                         }
                     }
                 }
