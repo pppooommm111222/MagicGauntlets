@@ -41,7 +41,7 @@ public class MagicGauntlets implements ModInitializer {
             if (!world.isClient) {
                 ServerWorld sw = (ServerWorld) world;
                 sw.spawnParticles(ParticleTypes.PORTAL, user.getX(), user.getY() + 1, user.getZ(), 100, 3, 3, 3, 0.1);
-                sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 2.0f, 0.5f);
+                sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT.value(), SoundCategory.PLAYERS, 2.0f, 0.5f);
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(15.0));
                 for (Entity entity : entities) {
                     if (entity instanceof LivingEntity living && living != user) {
@@ -66,7 +66,7 @@ public class MagicGauntlets implements ModInitializer {
                 int count = isCombo ? 50 : 10;
                 sw.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, user.getX(), user.getY(), user.getZ(), count, 2, 2, 2, 0);
                 sw.spawnParticles(ParticleTypes.FLAME, user.getX(), user.getY(), user.getZ(), count * 10, 3, 3, 3, 0.5);
-                sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 3.0f, 0.5f);
+                sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE.value(), SoundCategory.PLAYERS, 3.0f, 0.5f);
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(isCombo ? 10.0 : 5.0));
                 for (Entity entity : entities) {
                     if (entity instanceof LivingEntity living) {
@@ -91,7 +91,7 @@ public class MagicGauntlets implements ModInitializer {
                 int duration = isCombo ? 400 : 200;
                 int amp = isCombo ? 4 : 2;
                 sw.spawnParticles(ParticleTypes.SNOWFLAKE, user.getX(), user.getY() + 1, user.getZ(), isCombo ? 500 : 100, 5, 5, 5, 0.1);
-                sw.playSound(null, user.getBlockPos(), SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 3.0f, 0.5f);
+                sw.playSound(null, user.getBlockPos(), SoundEvents.BLOCK_GLASS_BREAK.value(), SoundCategory.PLAYERS, 3.0f, 0.5f);
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(isCombo ? 20.0 : 10.0));
                 for (Entity entity : entities) {
                     if (entity instanceof LivingEntity living) {
@@ -116,7 +116,7 @@ public class MagicGauntlets implements ModInitializer {
                 ServerWorld sw = (ServerWorld) world;
                 boolean isCombo = (System.currentTimeMillis() - COMBO_TIMER.getOrDefault(user.getUuid(), 0L)) < 3000;
                 double range = isCombo ? 25.0 : 15.0;
-                sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.PLAYERS, 5.0f, 1.0f);
+                sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER.value(), SoundCategory.PLAYERS, 5.0f, 1.0f);
                 sw.spawnParticles(ParticleTypes.ELECTRIC_SPARK, user.getX(), user.getY() + 1, user.getZ(), 300, 5, 5, 5, 0.5);
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(range));
                 for (Entity entity : entities) {
