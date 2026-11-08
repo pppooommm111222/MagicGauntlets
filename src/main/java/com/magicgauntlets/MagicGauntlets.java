@@ -41,6 +41,7 @@ public class MagicGauntlets implements ModInitializer {
             if (!world.isClient) {
                 ServerWorld sw = (ServerWorld) world;
                 sw.spawnParticles(ParticleTypes.PORTAL, user.getX(), user.getY() + 1, user.getZ(), 100, 3, 3, 3, 0.1);
+                // 如果这个也报错，再给它加 .value()，现在先保持
                 sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 2.0f, 0.5f);
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(15.0));
                 for (Entity entity : entities) {
@@ -56,7 +57,7 @@ public class MagicGauntlets implements ModInitializer {
         }
     };
 
-    // 2. 星爆手环
+    // 2. 星爆手环 (第69行修复点)
     public static final Item STARBURST_GAUNTLET = new Item(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(MOD_ID, "starburst_gauntlet"))).maxCount(1)) {
         @Override
         public ActionResult use(World world, PlayerEntity user, Hand hand) {
@@ -66,7 +67,8 @@ public class MagicGauntlets implements ModInitializer {
                 int count = isCombo ? 50 : 10;
                 sw.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, user.getX(), user.getY(), user.getZ(), count, 2, 2, 2, 0);
                 sw.spawnParticles(ParticleTypes.FLAME, user.getX(), user.getY(), user.getZ(), count * 10, 3, 3, 3, 0.5);
-                sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 3.0f, 0.5f);
+                // 修复点：给 ENTITY_GENERIC_EXPLODE 加上 .value() 拆包
+                sw.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE.value(), SoundCategory.PLAYERS, 3.0f, 0.5f);
                 List<Entity> entities = sw.getOtherEntities(user, user.getBoundingBox().expand(isCombo ? 10.0 : 5.0));
                 for (Entity entity : entities) {
                     if (entity instanceof LivingEntity living) {
